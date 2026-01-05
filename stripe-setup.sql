@@ -8,13 +8,14 @@ create table if not exists public.orders (
     id              uuid primary key default gen_random_uuid(),
     stripe_session_id text unique,
     stripe_payment_intent_id text,
-    customer_email   text,
+    customer_email   text not null,
     customer_name    text,
+    customer_phone   text,
     total_amount     numeric not null,
     currency         text default 'usd',
     status           text default 'pending', -- pending, paid, failed, cancelled
     items            jsonb not null, -- массив товаров из корзины
-    shipping_address jsonb,
+    shipping_address jsonb not null, -- все данные доставки: country, firstName, lastName, address, apartment, postalCode, city, phone
     created_at       timestamptz not null default now(),
     updated_at       timestamptz not null default now()
 );

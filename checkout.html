@@ -822,6 +822,21 @@
                     quantity: 1
                 });
 
+                // Подготавливаем полные данные адреса доставки
+                const shippingAddressData = {
+                    country: country,
+                    countryName: countryNames[country] || country,
+                    firstName: firstName,
+                    lastName: lastName,
+                    fullName: `${firstName} ${lastName}`,
+                    address: address,
+                    apartment: document.getElementById('apartment').value || null,
+                    postalCode: postalCode,
+                    city: city,
+                    phone: phone,
+                    email: email
+                };
+
                 const { data, error } = await supabaseClient.functions.invoke('create-checkout', {
                     body: {
                         items: items,
@@ -829,16 +844,7 @@
                         customerName: `${firstName} ${lastName}`,
                         successUrl: successUrl,
                         cancelUrl: cancelUrl,
-                        shippingAddress: {
-                            country: country,
-                            firstName: firstName,
-                            lastName: lastName,
-                            address: address,
-                            apartment: document.getElementById('apartment').value,
-                            postalCode: postalCode,
-                            city: city,
-                            phone: phone
-                        }
+                        shippingAddress: shippingAddressData
                     }
                 });
 

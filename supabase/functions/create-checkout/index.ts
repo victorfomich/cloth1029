@@ -47,15 +47,17 @@ serve(async (req) => {
     );
 
     // Создаём заказ в базе данных (со статусом pending)
+    // Сохраняем все данные из формы: email, имя, телефон, адрес доставки
     const { data: order, error: orderError } = await supabaseClient
       .from("orders")
       .insert({
         customer_email: customerEmail,
         customer_name: customerName,
+        customer_phone: shippingAddress?.phone || null,
         total_amount: totalAmount,
         status: "pending",
         items: items,
-        shipping_address: shippingAddress || null,
+        shipping_address: shippingAddress || null, // Сохраняем все данные адреса: country, firstName, lastName, address, apartment, postalCode, city, phone
       })
       .select()
       .single();

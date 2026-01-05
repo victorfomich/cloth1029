@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRAZKE Admin</title>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f4f4f5; margin:0; padding:0; }
+        header { background:#111; color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+        header h1 { font-size:18px; letter-spacing:1px; text-transform:uppercase; }
+        main { max-width:1100px; margin:24px auto; padding:0 16px 32px; }
+        .card { background:#fff; border-radius:12px; padding:20px 20px 24px; box-shadow:0 10px 25px rgba(15,23,42,0.12); margin-bottom:20px; }
+        .card h2 { margin:0 0 12px; font-size:18px; }
+        .muted { color:#6b7280; font-size:14px; }
+        .products-table { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
+        .products-table th, .products-table td { padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:top; }
+        .products-table th { background:#f9fafb; font-weight:600; font-size:13px; }
+        .badge { display:inline-flex; align-items:center; justify-content:center; padding:2px 8px; border-radius:999px; background:#111827; color:#fff; font-size:11px; }
+        .btn { border-radius:999px; border:none; padding:8px 14px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+        .btn-primary { background:#111827; color:#fff; }
+        .btn-ghost { background:transparent; color:#111827; }
+        .btn-danger { background:#fee2e2; color:#b91c1c; }
+        .btn:disabled { opacity:0.6; cursor:default; }
+        form .field { margin-bottom:12px; }
+        .field label { display:block; font-size:13px; font-weight:500; margin-bottom:4px; }
+        .field input, .field textarea { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #d1d5db; font-size:13px; box-sizing:border-box; }
+        .field textarea { min-height:70px; resize:vertical; }
+        .hint { font-size:12px; color:#9ca3af; margin-top:2px; }
+        .pill { display:inline-flex; padding:2px 8px; border-radius:999px; background:#e5e7eb; font-size:11px; margin-right:4px; margin-bottom:4px; }
+        .row-actions { display:flex; gap:6px; }
+        .status-text { font-size:13px; color:#6b7280; margin-top:4px; }
+        .flex-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:10px; }
+        a.link { color:#111827; text-decoration:underline; font-size:13px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>BRAZKE Admin</h1>
+        <div style="font-size:13px; color:#d1d5db;">Управление товарами маркетплейса</div>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>Подключение к базе (Supabase)</h2>
+            <p class="muted">
+                Отредактируй файл <code>admin.html</code> и <code>index.html</code>, вставь свои
+                <strong>SUPABASE_URL</strong> и <strong>SUPABASE_ANON_KEY</strong>, полученные в проекте Supabase.
+            </p>
+            <p class="status-text" id="connection-status">Статус: ещё не подключались.</p>
+        </section>
+
+        <section class="card">
+            <h2>Список товаров</h2>
+            <div class="flex-row">
+                <p class="muted">Таблица <code>products</code> в Supabase. Схема ниже.</p>
+                <button class="btn btn-primary" id="reload-products-btn">Обновить список</button>
+            </div>
+            <table class="products-table" id="products-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th>Цена</th>
+                        <th>Размеры</th>
+                        <th>Галерея</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="products-tbody">
+                    <tr><td colspan="6" class="muted">Нет данных. Нажми «Обновить список».</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card">
+            <h2>Добавить / Редактировать товар</h2>
+            <p class="muted">Для галереи и размеров используй списки через запятую.</p>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="field">
+                    <label for="title">Название</label>
+                    <input id="title" type="text" required>
+                </div>
+                <div class="field">
+                    <label for="price">Цена (USD)</label>
+                    <input id="price" type="number" step="0.01" required>
+                </div>
+                <div class="field">
+                    <label for="description">Описание</label>
+                    <textarea id="description"></textarea>
+                </div>
+                <div class="field">
+                    <label for="main-image">Главное изображение (URL)</label>
+                    <input id="main-image" type="text" required>
+                    <div class="hint">Можно использовать ссылки на Supabase Storage, CDN или обычные URL.</div>
+                </div>
+                <div class="field">
+                    <label for="gallery">Галерея (URL через запятую)</label>
+                    <input id="gallery" type="text">
+                    <div class="hint">Например: <code>https://.../img1.jpg, https://.../img2.jpg</code></div>
+                </div>
+                <div class="field">
+                    <label for="sizes">Размеры (через запятую)</label>
+                    <input id="sizes" type="text">
+                    <div class="hint">Например: <code>XS,S,M,L,XL</code></div>
+                </div>
+                <div class="flex-row">
+                    <div>
+                        <button type="submit" class="btn btn-primary" id="save-btn">Сохранить товар</button>
+                        <button type="button" class="btn btn-ghost" id="reset-btn">Очистить форму</button>
+                    </div>
+                    <div id="form-status" class="status-text"></div>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Схема таблицы products (Supabase)</h2>
+            <p class="muted">
+                Создай таблицу <code>products</code> со столбцами:
+            </p>
+            <ul class="muted">
+                <li><strong>id</strong> – <code>bigint</code>, primary key, auto increment</li>
+                <li><strong>title</strong> – <code>text</code>, not null</li>
+                <li><strong>price</strong> – <code>numeric</code>, not null</li>
+                <li><strong>description</strong> – <code>text</code>, nullable</li>
+                <li><strong>main_image</strong> – <code>text</code>, not null</li>
+                <li><strong>gallery</strong> – <code>text[]</code>, nullable</li>
+                <li><strong>sizes</strong> – <code>text[]</code>, nullable</li>
+            </ul>
+            <p class="muted">
+                Потом включи RLS и добавь политики (например, разрешить чтение всем, а запись только тебе через Auth).
+            </p>
+        </section>
+    </main>
+
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ВАЖНО: заполни те же значения, что и в index.html
+        const SUPABASE_URL = 'https://xrlitnxswsiuwntmkmaj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhybGl0bnhzd3NpdXdudG1rbWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MDYxMDksImV4cCI6MjA4MzE4MjEwOX0.-I_44JSVp7hqY8LiVlwgqXi0WNo-gwmtnL5WXv5dYvw';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const connectionStatusEl = document.getElementById('connection-status');
+        const productsTbody = document.getElementById('products-tbody');
+        const reloadBtn = document.getElementById('reload-products-btn');
+        const form = document.getElementById('product-form');
+        const formStatus = document.getElementById('form-status');
+
+        const productIdInput = document.getElementById('product-id');
+        const titleInput = document.getElementById('title');
+        const priceInput = document.getElementById('price');
+        const descriptionInput = document.getElementById('description');
+        const mainImageInput = document.getElementById('main-image');
+        const galleryInput = document.getElementById('gallery');
+        const sizesInput = document.getElementById('sizes');
+
+        async function testConnectionOnce() {
+            const { error } = await supabase.from('products').select('id').limit(1);
+            if (error) {
+                connectionStatusEl.textContent = 'Статус: ошибка подключения к Supabase (проверь URL и ключ).';
+                connectionStatusEl.style.color = '#b91c1c';
+            } else {
+                connectionStatusEl.textContent = 'Статус: подключение к Supabase успешно.';
+                connectionStatusEl.style.color = '#16a34a';
+            }
+        }
+
+        function renderProductsTable(products) {
+            productsTbody.innerHTML = '';
+            if (!products || !products.length) {
+                productsTbody.innerHTML = '<tr><td colspan="6" class="muted">Товаров пока нет.</td></tr>';
+                return;
+            }
+
+            products.forEach(p => {
+                const tr = document.createElement('tr');
+                const sizesHtml = (p.sizes || []).map(s => `<span class="pill">${s}</span>`).join(' ');
+                const galleryCount = (p.gallery || []).length;
+
+                tr.innerHTML = `
+                    <td>${p.id}</td>
+                    <td>${p.title}</td>
+                    <td>${p.price}</td>
+                    <td>${sizesHtml || '<span class="muted">—</span>'}</td>
+                    <td>${galleryCount ? '<span class="badge">'+galleryCount+' фото</span>' : '<span class="muted">—</span>'}</td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="btn btn-ghost" data-action="edit" data-id="${p.id}">Изм.</button>
+                            <button class="btn btn-danger" data-action="delete" data-id="${p.id}">Удалить</button>
+                        </div>
+                    </td>
+                `;
+                productsTbody.appendChild(tr);
+            });
+        }
+
+        async function loadProducts() {
+            reloadBtn.disabled = true;
+            reloadBtn.textContent = 'Загрузка...';
+            productsTbody.innerHTML = '<tr><td colspan="6" class="muted">Загрузка...</td></tr>';
+
+            const { data, error } = await supabase
+                .from('products')
+                .select('*')
+                .order('id', { ascending: true });
+
+            reloadBtn.disabled = false;
+            reloadBtn.textContent = 'Обновить список';
+
+            if (error) {
+                console.error(error);
+                productsTbody.innerHTML = '<tr><td colspan="6" style="color:#b91c1c;">Ошибка загрузки товаров</td></tr>';
+                return;
+            }
+
+            renderProductsTable(data || []);
+        }
+
+        async function saveProduct(event) {
+            event.preventDefault();
+            formStatus.textContent = '';
+            const id = productIdInput.value ? Number(productIdInput.value) : null;
+
+            const payload = {
+                title: titleInput.value.trim(),
+                price: Number(priceInput.value),
+                description: descriptionInput.value.trim() || null,
+                main_image: mainImageInput.value.trim(),
+                gallery: galleryInput.value.trim()
+                    ? galleryInput.value.split(',').map(x => x.trim()).filter(Boolean)
+                    : [],
+                sizes: sizesInput.value.trim()
+                    ? sizesInput.value.split(',').map(x => x.trim()).filter(Boolean)
+                    : []
+            };
+
+            if (!payload.title || !payload.main_image || Number.isNaN(payload.price)) {
+                formStatus.textContent = 'Заполни обязательные поля (название, цена, главное изображение).';
+                formStatus.style.color = '#b91c1c';
+                return;
+            }
+
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Сохранение...';
+
+            let error;
+            if (id) {
+                const res = await supabase.from('products').update(payload).eq('id', id).select();
+                error = res.error;
+            } else {
+                const res = await supabase.from('products').insert(payload).select();
+                error = res.error;
+            }
+
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Сохранить товар';
+
+            if (error) {
+                console.error(error);
+                formStatus.textContent = 'Ошибка сохранения. См. консоль.';
+                formStatus.style.color = '#b91c1c';
+                return;
+            }
+
+            formStatus.textContent = id ? 'Товар обновлён.' : 'Товар создан.';
+            formStatus.style.color = '#16a34a';
+            await loadProducts();
+            resetFormFields();
+        }
+
+        function resetFormFields() {
+            productIdInput.value = '';
+            titleInput.value = '';
+            priceInput.value = '';
+            descriptionInput.value = '';
+            mainImageInput.value = '';
+            galleryInput.value = '';
+            sizesInput.value = '';
+            formStatus.textContent = '';
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Удалить товар #' + id + '?')) return;
+            const { error } = await supabase.from('products').delete().eq('id', id);
+            if (error) {
+                console.error(error);
+                alert('Ошибка удаления товара. См. консоль.');
+                return;
+            }
+            await loadProducts();
+        }
+
+        async function fillFormFromProductId(id) {
+            const { data, error } = await supabase.from('products').select('*').eq('id', id).maybeSingle();
+            if (error || !data) {
+                console.error(error);
+                alert('Не удалось загрузить товар для редактирования.');
+                return;
+            }
+
+            productIdInput.value = data.id;
+            titleInput.value = data.title || '';
+            priceInput.value = data.price || '';
+            descriptionInput.value = data.description || '';
+            mainImageInput.value = data.main_image || '';
+            galleryInput.value = (data.gallery || []).join(', ');
+            sizesInput.value = (data.sizes || []).join(', ');
+            formStatus.textContent = 'Режим редактирования товара #' + data.id;
+            formStatus.style.color = '#111827';
+        }
+
+        // Слушатели
+        reloadBtn.addEventListener('click', loadProducts);
+        form.addEventListener('submit', saveProduct);
+        document.getElementById('reset-btn').addEventListener('click', resetFormFields);
+
+        productsTbody.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const id = Number(btn.getAttribute('data-id'));
+            if (!id) return;
+
+            if (action === 'edit') {
+                fillFormFromProductId(id);
+            } else if (action === 'delete') {
+                deleteProduct(id);
+            }
+        });
+
+        // Первый запуск
+        (async () => {
+            await testConnectionOnce();
+            await loadProducts();
+        })();
+    </script>
+</body>
+</html>
+
+

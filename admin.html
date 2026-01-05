@@ -245,6 +245,24 @@
             formStatus.textContent = '';
             const id = productIdInput.value ? Number(productIdInput.value) : null;
 
+            // Парсим таблицу размеров из JSON
+            let sizeTable = null;
+            const sizeTableValue = sizeTableInput.value.trim();
+            if (sizeTableValue) {
+                try {
+                    sizeTable = JSON.parse(sizeTableValue);
+                    // Валидация структуры
+                    if (!sizeTable.headers || !Array.isArray(sizeTable.headers) || 
+                        !sizeTable.rows || !Array.isArray(sizeTable.rows)) {
+                        throw new Error('Неверный формат таблицы размеров');
+                    }
+                } catch (e) {
+                    formStatus.textContent = 'Ошибка в JSON таблицы размеров: ' + e.message;
+                    formStatus.style.color = '#b91c1c';
+                    return;
+                }
+            }
+
             const payload = {
                 title: titleInput.value.trim(),
                 price: Number(priceInput.value),
@@ -255,7 +273,8 @@
                     : [],
                 sizes: sizesInput.value.trim()
                     ? sizesInput.value.split(',').map(x => x.trim()).filter(Boolean)
-                    : []
+                    : [],
+                size_table: sizeTable
             };
 
             if (!payload.title || !payload.main_image || Number.isNaN(payload.price)) {

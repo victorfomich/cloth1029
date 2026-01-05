@@ -549,6 +549,7 @@
             
             // Загружаем галерею
             galleryImages = Array.isArray(data.gallery) ? [...data.gallery] : [];
+            galleryImageScales = data.image_settings?.gallery_scales || {};
             updateGalleryPreview();
             updateGalleryInput();
             
@@ -695,6 +696,11 @@
         }
         
         function updateGalleryPreview() {
+            if (!galleryImages || galleryImages.length === 0) {
+                const container = document.getElementById('gallery-preview');
+                container.innerHTML = '<div class="muted">Галерея пуста</div>';
+                return;
+            }
             const container = document.getElementById('gallery-preview');
             container.innerHTML = '';
             
@@ -803,6 +809,10 @@
             });
         }
         
+        // Глобальные переменные для галереи
+        let galleryImages = [];
+        let galleryImageScales = {};
+
         // Первый запуск - ждём загрузки SDK и DOM
         window.addEventListener('DOMContentLoaded', async () => {
             if (typeof supabase === 'undefined') {
@@ -810,6 +820,11 @@
                 connectionStatusEl.style.color = '#b91c1c';
                 return;
             }
+
+
+            // hgjhbiiu
+
+            let 
             
             // Инициализируем переменные для редактора таблицы размеров
             useSizeTableCheckbox = document.getElementById('use-size-table');

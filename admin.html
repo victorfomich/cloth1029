@@ -454,18 +454,6 @@
             }
         }
         
-        // Предпросмотр изображения
-        if (mainImageInput) {
-            mainImageInput.addEventListener('input', function() {
-                const preview = document.getElementById('main-image-preview');
-                if (this.value && preview) {
-                    preview.src = this.value;
-                    preview.style.display = 'block';
-                } else if (preview) {
-                    preview.style.display = 'none';
-                }
-            });
-        }
 
         async function deleteProduct(id) {
             if (!confirm('Удалить товар #' + id + '?')) return;
@@ -537,6 +525,25 @@
                 connectionStatusEl.style.color = '#b91c1c';
                 return;
             }
+            
+            // Инициализируем переменные для редактора таблицы размеров
+            useSizeTableCheckbox = document.getElementById('use-size-table');
+            sizeTableEditorContainer = document.getElementById('size-table-editor-container');
+            sizeTablePreview = document.getElementById('size-table-preview');
+            
+            // Инициализируем предпросмотр изображения
+            if (mainImageInput) {
+                mainImageInput.addEventListener('input', function() {
+                    const preview = document.getElementById('main-image-preview');
+                    if (this.value && preview) {
+                        preview.src = this.value;
+                        preview.style.display = 'block';
+                    } else if (preview) {
+                        preview.style.display = 'none';
+                    }
+                });
+            }
+            
             await testConnectionOnce();
             await loadProducts();
         });

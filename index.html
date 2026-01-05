@@ -233,7 +233,12 @@
         const SUPABASE_URL = 'https://xrlitnxswsiuwntmkmaj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhybGl0bnhzd3NpdXdudG1rbWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MDYxMDksImV4cCI6MjA4MzE4MjEwOX0.-I_44JSVp7hqY8LiVlwgqXi0WNo-gwmtnL5WXv5dYvw';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Проверяем, что Supabase SDK загружен
+        if (typeof supabase === 'undefined') {
+            console.error('Supabase SDK не загружен! Проверь подключение к CDN.');
+        }
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         /* --- ДАННЫЕ (Каталог, храним в памяти после загрузки из Supabase) --- */
         let productsData = [];
@@ -261,7 +266,7 @@
             productsContainer.innerHTML = '<p>Loading products...</p>';
 
             // Таблица products: id, title, price, description, main_image, gallery, sizes
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('products')
                 .select('*')
                 .order('id', { ascending: true });
@@ -464,8 +469,18 @@
             toggleCart();
         }
 
-        // Запуск
-        init();
+        // Запуск - ждём загрузки SDK и DOM
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (typeof supabase === 'undefined') {
+                console.error('Supabase SDK не загружен!');
+                const productsContainer = document.getElementById('products-container');
+                if (productsContainer) {
+                    productsContainer.innerHTML = '<p style="color:red;">Ошибка: Supabase SDK не загружен. Проверь интернет-соединение.</p>';
+                }
+                return;
+            }
+            await init();
+        });
 
     </script>
 </body>

@@ -141,7 +141,12 @@
         const SUPABASE_URL = 'https://xrlitnxswsiuwntmkmaj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhybGl0bnhzd3NpdXdudG1rbWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MDYxMDksImV4cCI6MjA4MzE4MjEwOX0.-I_44JSVp7hqY8LiVlwgqXi0WNo-gwmtnL5WXv5dYvw';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Проверяем, что Supabase SDK загружен
+        if (typeof supabase === 'undefined') {
+            console.error('Supabase SDK не загружен! Проверь подключение к CDN.');
+        }
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const connectionStatusEl = document.getElementById('connection-status');
         const productsTbody = document.getElementById('products-tbody');
@@ -158,13 +163,20 @@
         const sizesInput = document.getElementById('sizes');
 
         async function testConnectionOnce() {
-            const { error } = await supabase.from('products').select('id').limit(1);
-            if (error) {
-                connectionStatusEl.textContent = 'Статус: ошибка подключения к Supabase (проверь URL и ключ).';
+            try {
+                const { error } = await supabaseClient.from('products').select('id').limit(1);
+                if (error) {
+                    connectionStatusEl.textContent = 'Статус: ошибка подключения - ' + error.message;
+                    connectionStatusEl.style.color = '#b91c1c';
+                    console.error('Supabase connection error:', error);
+                } else {
+                    connectionStatusEl.textContent = 'Статус: подключение к Supabase успешно ✓';
+                    connectionStatusEl.style.color = '#16a34a';
+                }
+            } catch (err) {
+                connectionStatusEl.textContent = 'Статус: ошибка инициализации - ' + err.message;
                 connectionStatusEl.style.color = '#b91c1c';
-            } else {
-                connectionStatusEl.textContent = 'Статус: подключение к Supabase успешно.';
-                connectionStatusEl.style.color = '#16a34a';
+                console.error('Initialization error:', err);
             }
         }
 
@@ -202,7 +214,7 @@
             reloadBtn.textContent = 'Загрузка...';
             productsTbody.innerHTML = '<tr><td colspan="6" class="muted">Загрузка...</td></tr>';
 
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('products')
                 .select('*')
                 .order('id', { ascending: true });
@@ -249,10 +261,10 @@
 
             let error;
             if (id) {
-                const res = await supabase.from('products').update(payload).eq('id', id).select();
+                const res = await supabaseClient.from('products').update(payload).eq('id', id).select();
                 error = res.error;
             } else {
-                const res = await supabase.from('products').insert(payload).select();
+                const res = await supabaseClient.from('products').insert(payload).select();
                 error = res.error;
             }
 
@@ -285,7 +297,7 @@
 
         async function deleteProduct(id) {
             if (!confirm('Удалить товар #' + id + '?')) return;
-            const { error } = await supabase.from('products').delete().eq('id', id);
+            const { error } = await supabaseClient.from('products').delete().eq('id', id);
             if (error) {
                 console.error(error);
                 alert('Ошибка удаления товара. См. консоль.');
@@ -295,7 +307,7 @@
         }
 
         async function fillFormFromProductId(id) {
-            const { data, error } = await supabase.from('products').select('*').eq('id', id).maybeSingle();
+            const { data, error } = await supabaseClient.from('products').select('*').eq('id', id).maybeSingle();
             if (error || !data) {
                 console.error(error);
                 alert('Не удалось загрузить товар для редактирования.');
@@ -332,11 +344,16 @@
             }
         });
 
-        // Первый запуск
-        (async () => {
+        // Первый запуск - ждём загрузки SDK и DOM
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (typeof supabase === 'undefined') {
+                connectionStatusEl.textContent = 'Статус: ошибка - Supabase SDK не загружен. Проверь интернет-соединение.';
+                connectionStatusEl.style.color = '#b91c1c';
+                return;
+            }
             await testConnectionOnce();
             await loadProducts();
-        })();
+        });
     </script>
 </body>
 </html>

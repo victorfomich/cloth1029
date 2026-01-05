@@ -693,6 +693,8 @@
             if (url && preview) {
                 preview.src = url;
                 preview.style.display = 'block';
+                preview.style.transform = `scale(${mainImageScale / 100})`;
+                preview.style.transformOrigin = 'center';
             } else if (preview) {
                 preview.style.display = 'none';
             }

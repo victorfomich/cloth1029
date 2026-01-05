@@ -197,6 +197,14 @@
         const mainImageInput = document.getElementById('main-image');
         const galleryInput = document.getElementById('gallery');
         const sizesInput = document.getElementById('sizes');
+        const sizeTableInput = document.getElementById('size-table');
+        
+        // Переменные для редактора таблицы размеров (инициализируются после загрузки DOM)
+        let useSizeTableCheckbox, sizeTableEditorContainer, sizeTablePreview;
+        let sizeTableData = {
+            headers: ['Размер', 'US', 'FR', 'UK', 'JP'],
+            rows: []
+        };
 
         async function testConnectionOnce() {
             try {

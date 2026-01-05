@@ -16,34 +16,21 @@
 
 ## Шаг 3: Создать Edge Functions в Supabase
 
-### 3.1. Установи Supabase CLI (если ещё не установлен)
+**📖 Подробная инструкция:** Смотри файл `DEPLOY_FUNCTIONS.md`
 
-```bash
-npm install -g supabase
-```
+### Быстрый способ (через Dashboard - РЕКОМЕНДУЕТСЯ):
 
-### 3.2. Логин в Supabase через CLI
+1. Зайди в Supabase Dashboard → Edge Functions
+2. Создай функцию `create-checkout`:
+   - Скопируй код из `supabase/functions/create-checkout/index.ts`
+   - Вставь в редактор и нажми "Deploy"
+3. Создай функцию `stripe-webhook`:
+   - Скопируй код из `supabase/functions/stripe-webhook/index.ts`
+   - Вставь в редактор и нажми "Deploy"
 
-```bash
-supabase login
-```
+### Альтернативный способ (через CLI):
 
-### 3.3. Свяжи проект с Supabase
-
-```bash
-cd "/Users/victor/Desktop/cloth market"
-supabase link --project-ref xrlitnxswsiuwntmkmaj
-```
-
-### 3.4. Деплой Edge Functions
-
-```bash
-# Деплой функции create-checkout
-supabase functions deploy create-checkout
-
-# Деплой функции stripe-webhook
-supabase functions deploy stripe-webhook
-```
+Смотри подробную инструкцию в `DEPLOY_FUNCTIONS.md`
 
 ## Шаг 4: Настроить переменные окружения в Supabase
 

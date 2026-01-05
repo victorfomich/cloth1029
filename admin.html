@@ -523,17 +523,27 @@
             priceInput.value = data.price || '';
             descriptionInput.value = data.description || '';
             mainImageInput.value = data.main_image || '';
-            galleryInput.value = (data.gallery || []).join(', ');
+            updateMainImagePreview(data.main_image);
+            
+            // Загружаем галерею
+            galleryImages = Array.isArray(data.gallery) ? [...data.gallery] : [];
+            updateGalleryPreview();
+            updateGalleryInput();
+            
             sizesInput.value = (data.sizes || []).join(', ');
             
             // Загружаем таблицу размеров
             if (data.size_table) {
                 sizeTableData = data.size_table;
-                useSizeTableCheckbox.checked = true;
-                toggleSizeTableEditor();
+                if (useSizeTableCheckbox) {
+                    useSizeTableCheckbox.checked = true;
+                    toggleSizeTableEditor();
+                }
             } else {
-                useSizeTableCheckbox.checked = false;
-                toggleSizeTableEditor();
+                if (useSizeTableCheckbox) {
+                    useSizeTableCheckbox.checked = false;
+                    toggleSizeTableEditor();
+                }
             }
             
             formStatus.textContent = '✏️ Режим редактирования товара #' + data.id;

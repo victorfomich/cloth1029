@@ -349,10 +349,85 @@
                 return;
             }
 
-            formStatus.textContent = id ? 'Товар обновлён.' : 'Товар создан.';
-            formStatus.style.color = '#16a34a';
+            formStatus.textContent = id ? '✓ Товар обновлён успешно!' : '✓ Товар создан успешно!';
+            formStatus.className = 'status-text success';
             await loadProducts();
-            resetFormFields();
+            setTimeout(() => {
+                resetFormFields();
+            }, 1000);
+        }
+        
+        // Функции для редактора таблицы размеров
+        function toggleSizeTableEditor() {
+            if (!useSizeTableCheckbox || !sizeTableEditorContainer) return;
+            if (useSizeTableCheckbox.checked) {
+                sizeTableEditorContainer.style.display = 'block';
+                renderSizeTableEditor();
+            } else {
+                sizeTableEditorContainer.style.display = 'none';
+                sizeTableInput.value = '';
+            }
+        }
+        
+        function renderSizeTableEditor() {
+            if (!sizeTablePreview) return;
+            let html = '<table><thead><tr>';
+            sizeTableData.headers.forEach((header, idx) => {
+                html += `<th><input type="text" value="${header || ''}" onchange="updateSizeTableHeader(${idx}, this.value)" placeholder="Заголовок"></th>`;
+            });
+            html += '<th></th></tr></thead><tbody id="size-table-rows">';
+            
+            sizeTableData.rows.forEach((row, rowIdx) => {
+                html += '<tr>';
+                sizeTableData.headers.forEach((_, cellIdx) => {
+                    const cellValue = row[cellIdx] || '';
+                    html += `<td><input type="text" value="${cellValue}" onchange="updateSizeTableCell(${rowIdx}, ${cellIdx}, this.value)"></td>`;
+                });
+                html += `<td><button type="button" class="btn btn-small btn-danger" onclick="removeSizeTableRow(${rowIdx})">×</button></td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            sizeTablePreview.innerHTML = html;
+            updateSizeTableJSON();
+        }
+        
+        function addSizeTableRow() {
+            const newRow = sizeTableData.headers.map(() => '');
+            sizeTableData.rows.push(newRow);
+            renderSizeTableEditor();
+        }
+        
+        function removeSizeTableRow(index) {
+            sizeTableData.rows.splice(index, 1);
+            renderSizeTableEditor();
+        }
+        
+        function updateSizeTableHeader(index, value) {
+            sizeTableData.headers[index] = value;
+            updateSizeTableJSON();
+        }
+        
+        function updateSizeTableCell(rowIndex, cellIndex, value) {
+            if (!sizeTableData.rows[rowIndex]) {
+                sizeTableData.rows[rowIndex] = [];
+            }
+            sizeTableData.rows[rowIndex][cellIndex] = value;
+            updateSizeTableJSON();
+        }
+        
+        function resetSizeTable() {
+            sizeTableData = {
+                headers: ['Размер', 'US', 'FR', 'UK', 'JP'],
+                rows: []
+            };
+            renderSizeTableEditor();
+        }
+        
+        function updateSizeTableJSON() {
+            if (sizeTableInput) {
+                sizeTableInput.value = JSON.stringify(sizeTableData, null, 2);
+            }
         }
 
         function resetFormFields() {
@@ -364,26 +439,33 @@
             galleryInput.value = '';
             sizesInput.value = '';
             sizeTableInput.value = '';
-            useSizeTableCheckbox.checked = false;
-            toggleSizeTableEditor();
+            if (useSizeTableCheckbox) {
+                useSizeTableCheckbox.checked = false;
+                toggleSizeTableEditor();
+            }
             resetSizeTable();
             formStatus.textContent = '';
             formStatus.className = 'status-text';
             
             // Прокручиваем к форме
-            document.getElementById('product-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const form = document.getElementById('product-form');
+            if (form) {
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
         
         // Предпросмотр изображения
-        mainImageInput.addEventListener('input', function() {
-            const preview = document.getElementById('main-image-preview');
-            if (this.value && preview) {
-                preview.src = this.value;
-                preview.style.display = 'block';
-            } else if (preview) {
-                preview.style.display = 'none';
-            }
-        });
+        if (mainImageInput) {
+            mainImageInput.addEventListener('input', function() {
+                const preview = document.getElementById('main-image-preview');
+                if (this.value && preview) {
+                    preview.src = this.value;
+                    preview.style.display = 'block';
+                } else if (preview) {
+                    preview.style.display = 'none';
+                }
+            });
+        }
 
         async function deleteProduct(id) {
             if (!confirm('Удалить товар #' + id + '?')) return;

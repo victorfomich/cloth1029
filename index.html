@@ -384,36 +384,67 @@
 
         /* --- ЗАГРУЗКА ТОВАРОВ ИЗ SUPABASE --- */
         async function loadProductsFromSupabase() {
-            // Таблица products: id, title, price, description, main_image, gallery, sizes, size_table
-            const { data, error } = await supabaseClient
-                .from('products')
-                .select('*')
-                .order('id', { ascending: true });
+            try {
+                // Явно указываем поля, чтобы избежать ошибок если поле size_table еще не добавлено
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('id, title, price, description, main_image, gallery, sizes, size_table')
+                    .order('id', { ascending: true });
 
-            if (error) {
-                console.error('Error loading products from Supabase', error);
+                if (error) {
+                    console.error('Error loading products from Supabase', error);
+                    // Пробуем загрузить без size_table (если поле еще не добавлено)
+                    const { data: fallbackData, error: fallbackError } = await supabaseClient
+                        .from('products')
+                        .select('id, title, price, description, main_image, gallery, sizes')
+                        .order('id', { ascending: true });
+                    
+                    if (fallbackError) {
+                        throw fallbackError;
+                    }
+                    
+                    // Используем fallback данные
+                    productsData = (fallbackData || []).map(p => ({
+                        id: p.id,
+                        title: p.title,
+                        price: p.price,
+                        description: p.description,
+                        sizes: Array.isArray(p.sizes) ? p.sizes : [],
+                        mainImage: p.main_image,
+                        gallery: Array.isArray(p.gallery) && p.gallery.length ? p.gallery : [p.main_image],
+                        sizeTable: null
+                    }));
+                } else {
+                    // Приводим к формату, который дальше использует сайт
+                    productsData = (data || []).map(p => ({
+                        id: p.id,
+                        title: p.title,
+                        price: p.price,
+                        description: p.description,
+                        sizes: Array.isArray(p.sizes) ? p.sizes : [],
+                        mainImage: p.main_image,
+                        gallery: Array.isArray(p.gallery) && p.gallery.length ? p.gallery : [p.main_image],
+                        sizeTable: p.size_table || null
+                    }));
+                }
+
+                // Ждём загрузки всех изображений перед показом сайта
+                await preloadImages();
+                renderProductGrid();
+                hidePreloader();
+            } catch (err) {
+                console.error('Error loading products:', err);
                 hidePreloader();
                 const productsContainer = document.getElementById('products-container');
-                productsContainer.innerHTML = '<p style="color:red;">Error loading products.</p>';
-                return;
+                if (productsContainer) {
+                    productsContainer.innerHTML = `
+                        <p style="color:red; padding: 20px;">
+                            Ошибка загрузки товаров: ${err.message || 'Неизвестная ошибка'}<br>
+                            <small style="color:#666;">Проверь консоль браузера (F12) для деталей</small>
+                        </p>
+                    `;
+                }
             }
-
-            // Приводим к формату, который дальше использует сайт
-            productsData = (data || []).map(p => ({
-                id: p.id,
-                title: p.title,
-                price: p.price,
-                description: p.description,
-                sizes: Array.isArray(p.sizes) ? p.sizes : [],
-                mainImage: p.main_image,
-                gallery: Array.isArray(p.gallery) && p.gallery.length ? p.gallery : [p.main_image],
-                sizeTable: p.size_table || null
-            }));
-
-            // Ждём загрузки всех изображений перед показом сайта
-            await preloadImages();
-            renderProductGrid();
-            hidePreloader();
         }
 
         // Предзагрузка изображений

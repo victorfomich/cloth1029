@@ -91,7 +91,7 @@
         .product-card { cursor: pointer; transition: transform 0.2s; }
         .product-card:hover { transform: translateY(-5px); }
         .product-image-box { background-color: var(--color-light-bg); aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; border-radius: var(--radius); overflow: hidden; }
-        .product-image-box img { width: 80%; transition: transform 0.3s; }
+        .product-image-box img { width: 80%; transition: transform 0.3s; transform-origin: center; }
         .product-card:hover img { transform: scale(1.05); }
         .product-info h3 { font-size: 16px; font-weight: 500; margin-bottom: 5px; }
         .product-price { font-size: 15px; color: #444; }
@@ -502,12 +502,13 @@
         function renderProductGrid() {
             gridContainer.innerHTML = '';
             productsData.forEach(product => {
+                const scale = product.imageSettings?.main_image_scale || 100;
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 card.onclick = () => openProductPage(product.id);
                 card.innerHTML = `
                     <div class="product-image-box">
-                        <img src="${product.mainImage}" alt="${product.title}">
+                        <img src="${product.mainImage}" alt="${product.title}" style="transform: scale(${scale / 100});">
                     </div>
                     <div class="product-info">
                         <h3>${product.title}</h3>
@@ -529,7 +530,14 @@
             if (!product) return;
 
             // Заполнение данных
-            document.getElementById('detail-main-img').src = product.mainImage;
+            const mainImg = document.getElementById('detail-main-img');
+            mainImg.src = product.mainImage;
+            
+            // Применяем масштаб главного изображения
+            const mainImageScale = product.imageSettings?.main_image_scale || 100;
+            mainImg.style.transform = `scale(${mainImageScale / 100})`;
+            mainImg.style.transformOrigin = 'center';
+            
             document.getElementById('detail-title').innerText = product.title;
             document.getElementById('detail-price').innerText = `$${product.price}`;
             document.getElementById('detail-desc').innerText = product.description || "No description available.";
@@ -538,21 +546,26 @@
             const thumbsContainer = document.getElementById('detail-thumbnails');
             thumbsContainer.innerHTML = '';
             const imagesToShow = product.gallery && product.gallery.length ? product.gallery : [product.mainImage];
+            const galleryScales = product.imageSettings?.gallery_scales || {};
             
             // Делаем главное изображение кликабельным
-            const mainImg = document.getElementById('detail-main-img');
             mainImg.onclick = () => openImageModal(mainImg.src);
             
             imagesToShow.forEach((imgSrc, index) => {
                 const thumb = document.createElement('div');
                 thumb.className = `thumb ${index === 0 ? 'active' : ''}`;
+                const scale = galleryScales[imgSrc] || 100;
+                
                 thumb.onclick = () => {
                     mainImg.src = imgSrc;
+                    const newScale = galleryScales[imgSrc] || mainImageScale;
+                    mainImg.style.transform = `scale(${newScale / 100})`;
                     mainImg.onclick = () => openImageModal(imgSrc);
                     document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
                     thumb.classList.add('active');
                 };
-                thumb.innerHTML = `<img src="${imgSrc}" alt="">`;
+                
+                thumb.innerHTML = `<img src="${imgSrc}" alt="" style="transform: scale(${scale / 100}); transform-origin: center;">`;
                 thumbsContainer.appendChild(thumb);
             });
 

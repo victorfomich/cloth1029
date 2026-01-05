@@ -21,14 +21,31 @@
 4. Вставь код в редактор
 5. Нажми "Deploy"
 
-### 3. Настроить секреты
+### 3. Настроить секреты (ВАЖНО!)
 
-1. В Edge Functions → Settings → Secrets
-2. Добавь секреты:
-   - `STRIPE_SECRET_KEY` = твой секретный ключ из Stripe (начинается с `sk_test_...`)
-   - `STRIPE_WEBHOOK_SECRET` = webhook secret из Stripe (начинается с `whsec_...`)
+**Секреты находятся НЕ в функциях, а в отдельном разделе Settings!**
 
-Готово! Функции задеплоены.
+1. В левом меню Supabase Dashboard найди раздел **"Project Settings"** (шестерёнка ⚙️ внизу)
+2. В меню слева выбери **"Edge Functions"**
+3. Прокрути вниз до раздела **"Secrets"**
+4. Нажми **"Add new secret"** или **"New secret"**
+5. Добавь два секрета:
+
+   **Секрет 1:**
+   - Name: `STRIPE_SECRET_KEY`
+   - Value: твой секретный ключ из Stripe (начинается с `sk_test_...` или `sk_live_...`)
+   - Нажми "Add secret"
+
+   **Секрет 2:**
+   - Name: `STRIPE_WEBHOOK_SECRET`
+   - Value: webhook secret из Stripe (начинается с `whsec_...`)
+   - Нажми "Add secret"
+
+**Где взять ключи:**
+- `STRIPE_SECRET_KEY`: Stripe Dashboard → Developers → API keys → Secret key
+- `STRIPE_WEBHOOK_SECRET`: Stripe Dashboard → Developers → Webhooks → выбери endpoint → Signing secret
+
+Готово! Функции теперь имеют доступ к секретам.
 
 ---
 

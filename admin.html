@@ -44,6 +44,17 @@
         .size-table-editor input { width: 100%; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; }
         .size-table-controls { margin-top: 12px; display: flex; gap: 8px; }
         .btn-small { padding: 4px 8px; font-size: 11px; }
+        .image-upload-area { border: 2px dashed #d1d5db; border-radius: 8px; padding: 24px; text-align: center; background: #f9fafb; cursor: pointer; transition: all 0.2s; }
+        .image-upload-area:hover { border-color: #111827; background: #f3f4f6; }
+        .image-upload-area.dragover { border-color: #111827; background: #e5e7eb; }
+        .image-upload-area input[type="file"] { display: none; }
+        .uploaded-images { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+        .uploaded-image-item { position: relative; width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .uploaded-image-item img { width: 100%; height: 100%; object-fit: cover; }
+        .uploaded-image-item .remove-btn { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .uploaded-image-item .remove-btn:hover { background: rgba(220,38,38,0.9); }
+        .upload-progress { margin-top: 8px; font-size: 12px; color: #6b7280; }
+        .upload-progress.uploading { color: #111827; }
     </style>
 </head>
 <body>
@@ -105,16 +116,32 @@
                     <label for="description">Описание</label>
                     <textarea id="description"></textarea>
                 </div>
-                <div class="field">
-                    <label for="main-image">Главное изображение (URL)</label>
-                    <input id="main-image" type="text" required>
-                    <img id="main-image-preview" class="image-preview" style="display: none;" alt="Preview">
-                    <div class="hint">Можно использовать ссылки на Supabase Storage, CDN или обычные URL.</div>
-                </div>
-                <div class="field">
-                    <label for="gallery">Галерея (URL через запятую)</label>
-                    <input id="gallery" type="text">
-                    <div class="hint">Например: <code>https://.../img1.jpg, https://.../img2.jpg</code></div>
+                <div class="form-section">
+                    <div class="form-section-title">Изображения товара</div>
+                    
+                    <div class="field">
+                        <label>Главное изображение</label>
+                        <div class="image-upload-area" id="main-image-upload" onclick="document.getElementById('main-image-file').click()">
+                            <div>📷 Нажми для загрузки или перетащи изображение</div>
+                            <input type="file" id="main-image-file" accept="image/*" onchange="handleMainImageUpload(event)">
+                        </div>
+                        <input id="main-image" type="text" required style="margin-top: 12px;" placeholder="Или вставь URL изображения">
+                        <img id="main-image-preview" class="image-preview" style="display: none; margin-top: 8px;" alt="Preview">
+                        <div class="upload-progress" id="main-image-progress"></div>
+                        <div class="hint">Можно загрузить файл или вставить URL изображения.</div>
+                    </div>
+                    
+                    <div class="field">
+                        <label>Галерея изображений</label>
+                        <div class="image-upload-area" id="gallery-upload" onclick="document.getElementById('gallery-files').click()">
+                            <div>📷 Нажми для загрузки или перетащи изображения</div>
+                            <input type="file" id="gallery-files" accept="image/*" multiple onchange="handleGalleryUpload(event)">
+                        </div>
+                        <div class="uploaded-images" id="gallery-preview"></div>
+                        <input id="gallery" type="text" style="margin-top: 12px; display: none;" placeholder="URL через запятую (заполняется автоматически)">
+                        <div class="upload-progress" id="gallery-progress"></div>
+                        <div class="hint">Можно загрузить несколько изображений или вставить URL через запятую.</div>
+                    </div>
                 </div>
                 <div class="field">
                     <label for="sizes">Размеры (через запятую)</label>
@@ -303,9 +330,11 @@
                 price: Number(priceInput.value),
                 description: descriptionInput.value.trim() || null,
                 main_image: mainImageInput.value.trim(),
-                gallery: galleryInput.value.trim()
-                    ? galleryInput.value.split(',').map(x => x.trim()).filter(Boolean)
-                    : [],
+                gallery: galleryImages.length > 0 
+                    ? galleryImages 
+                    : (galleryInput.value.trim()
+                        ? galleryInput.value.split(',').map(x => x.trim()).filter(Boolean)
+                        : []),
                 sizes: sizesInput.value.trim()
                     ? sizesInput.value.split(',').map(x => x.trim()).filter(Boolean)
                     : [],
@@ -444,7 +473,10 @@
             priceInput.value = '';
             descriptionInput.value = '';
             mainImageInput.value = '';
-            galleryInput.value = '';
+            updateMainImagePreview('');
+            galleryImages = [];
+            updateGalleryPreview();
+            updateGalleryInput();
             sizesInput.value = '';
             sizeTableInput.value = '';
             if (useSizeTableCheckbox) {
@@ -454,6 +486,10 @@
             resetSizeTable();
             formStatus.textContent = '';
             formStatus.className = 'status-text';
+            
+            // Очищаем инпуты файлов
+            document.getElementById('main-image-file').value = '';
+            document.getElementById('gallery-files').value = '';
             
             // Прокручиваем к форме
             const form = document.getElementById('product-form');
@@ -526,6 +562,172 @@
             }
         });
 
+        // Функции для загрузки изображений
+        async function handleMainImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const progressEl = document.getElementById('main-image-progress');
+            progressEl.textContent = 'Загрузка...';
+            progressEl.className = 'upload-progress uploading';
+            
+            try {
+                const url = await uploadImageToStorage(file, `main-${Date.now()}-${file.name}`);
+                mainImageInput.value = url;
+                updateMainImagePreview(url);
+                progressEl.textContent = '✓ Изображение загружено';
+                progressEl.className = 'upload-progress';
+            } catch (error) {
+                console.error('Upload error:', error);
+                progressEl.textContent = '❌ Ошибка загрузки: ' + error.message;
+                progressEl.className = 'upload-progress';
+            }
+        }
+        
+        async function handleGalleryUpload(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+            
+            const progressEl = document.getElementById('gallery-progress');
+            progressEl.textContent = `Загрузка ${files.length} изображений...`;
+            progressEl.className = 'upload-progress uploading';
+            
+            try {
+                const uploadPromises = files.map((file, index) => 
+                    uploadImageToStorage(file, `gallery-${Date.now()}-${index}-${file.name}`)
+                );
+                const urls = await Promise.all(uploadPromises);
+                
+                galleryImages.push(...urls);
+                updateGalleryPreview();
+                updateGalleryInput();
+                
+                progressEl.textContent = `✓ Загружено ${urls.length} изображений`;
+                progressEl.className = 'upload-progress';
+            } catch (error) {
+                console.error('Upload error:', error);
+                progressEl.textContent = '❌ Ошибка загрузки: ' + error.message;
+                progressEl.className = 'upload-progress';
+            }
+        }
+        
+        async function uploadImageToStorage(file, fileName) {
+            // Загружаем файл в Supabase Storage
+            const { data, error } = await supabaseClient.storage
+                .from(STORAGE_BUCKET)
+                .upload(fileName, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+            
+            if (error) {
+                throw new Error(error.message);
+            }
+            
+            // Получаем публичный URL
+            const { data: { publicUrl } } = supabaseClient.storage
+                .from(STORAGE_BUCKET)
+                .getPublicUrl(data.path);
+            
+            return publicUrl;
+        }
+        
+        async function deleteImageFromStorage(imageUrl) {
+            try {
+                // Извлекаем путь из URL
+                const urlParts = imageUrl.split('/');
+                const fileName = urlParts[urlParts.length - 1].split('?')[0];
+                
+                const { error } = await supabaseClient.storage
+                    .from(STORAGE_BUCKET)
+                    .remove([fileName]);
+                
+                if (error) {
+                    console.error('Delete error:', error);
+                }
+            } catch (error) {
+                console.error('Error deleting image:', error);
+            }
+        }
+        
+        function updateMainImagePreview(url) {
+            const preview = document.getElementById('main-image-preview');
+            if (url && preview) {
+                preview.src = url;
+                preview.style.display = 'block';
+            } else if (preview) {
+                preview.style.display = 'none';
+            }
+        }
+        
+        function updateGalleryPreview() {
+            const container = document.getElementById('gallery-preview');
+            container.innerHTML = '';
+            
+            galleryImages.forEach((url, index) => {
+                const item = document.createElement('div');
+                item.className = 'uploaded-image-item';
+                item.innerHTML = `
+                    <img src="${url}" alt="Gallery image ${index + 1}">
+                    <button type="button" class="remove-btn" onclick="removeGalleryImage(${index})" title="Удалить">×</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        function removeGalleryImage(index) {
+            const url = galleryImages[index];
+            deleteImageFromStorage(url);
+            galleryImages.splice(index, 1);
+            updateGalleryPreview();
+            updateGalleryInput();
+        }
+        
+        function updateGalleryInput() {
+            galleryInput.value = galleryImages.join(', ');
+        }
+        
+        // Drag and drop для загрузки
+        function setupDragAndDrop() {
+            const mainUploadArea = document.getElementById('main-image-upload');
+            const galleryUploadArea = document.getElementById('gallery-upload');
+            
+            [mainUploadArea, galleryUploadArea].forEach(area => {
+                if (!area) return;
+                
+                area.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    area.classList.add('dragover');
+                });
+                
+                area.addEventListener('dragleave', () => {
+                    area.classList.remove('dragover');
+                });
+                
+                area.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    area.classList.remove('dragover');
+                    
+                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                    if (files.length === 0) return;
+                    
+                    if (area === mainUploadArea) {
+                        const fileInput = document.getElementById('main-image-file');
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(files[0]);
+                        fileInput.files = dataTransfer.files;
+                        handleMainImageUpload({ target: fileInput });
+                    } else {
+                        const fileInput = document.getElementById('gallery-files');
+                        const dataTransfer = new DataTransfer();
+                        files.forEach(f => dataTransfer.items.add(f));
+                        fileInput.files = dataTransfer.files;
+                        handleGalleryUpload({ target: fileInput });
+                    }
+                });
+            });
+        }
+        
         // Первый запуск - ждём загрузки SDK и DOM
         window.addEventListener('DOMContentLoaded', async () => {
             if (typeof supabase === 'undefined') {
@@ -542,15 +744,12 @@
             // Инициализируем предпросмотр изображения
             if (mainImageInput) {
                 mainImageInput.addEventListener('input', function() {
-                    const preview = document.getElementById('main-image-preview');
-                    if (this.value && preview) {
-                        preview.src = this.value;
-                        preview.style.display = 'block';
-                    } else if (preview) {
-                        preview.style.display = 'none';
-                    }
+                    updateMainImagePreview(this.value);
                 });
             }
+            
+            // Настраиваем drag and drop
+            setupDragAndDrop();
             
             await testConnectionOnce();
             await loadProducts();

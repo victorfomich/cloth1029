@@ -29,8 +29,21 @@
         .pill { display:inline-flex; padding:2px 8px; border-radius:999px; background:#e5e7eb; font-size:11px; margin-right:4px; margin-bottom:4px; }
         .row-actions { display:flex; gap:6px; }
         .status-text { font-size:13px; color:#6b7280; margin-top:4px; }
+        .status-text.error { color:#b91c1c; }
+        .status-text.success { color:#16a34a; }
         .flex-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:10px; }
         a.link { color:#111827; text-decoration:underline; font-size:13px; }
+        .form-section { border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 20px; }
+        .form-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+        .form-section-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #111827; }
+        .image-preview { max-width: 200px; max-height: 200px; margin-top: 8px; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .size-table-editor { border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; background: #f9fafb; margin-top: 8px; }
+        .size-table-editor table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .size-table-editor th, .size-table-editor td { padding: 8px; border: 1px solid #d1d5db; text-align: left; }
+        .size-table-editor th { background: #fff; font-weight: 600; }
+        .size-table-editor input { width: 100%; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; }
+        .size-table-controls { margin-top: 12px; display: flex; gap: 8px; }
+        .btn-small { padding: 4px 8px; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -73,7 +86,10 @@
         </section>
 
         <section class="card">
-            <h2>Добавить / Редактировать товар</h2>
+            <div class="flex-row" style="margin-bottom: 16px;">
+                <h2 style="margin: 0;">Добавить / Редактировать товар</h2>
+                <button type="button" class="btn btn-primary" id="new-product-btn" onclick="resetFormFields()">+ Новый товар</button>
+            </div>
             <p class="muted">Для галереи и размеров используй списки через запятую.</p>
             <form id="product-form">
                 <input type="hidden" id="product-id">
@@ -92,6 +108,7 @@
                 <div class="field">
                     <label for="main-image">Главное изображение (URL)</label>
                     <input id="main-image" type="text" required>
+                    <img id="main-image-preview" class="image-preview" style="display: none;" alt="Preview">
                     <div class="hint">Можно использовать ссылки на Supabase Storage, CDN или обычные URL.</div>
                 </div>
                 <div class="field">
@@ -104,14 +121,24 @@
                     <input id="sizes" type="text">
                     <div class="hint">Например: <code>XS,S,M,L,XL</code></div>
                 </div>
-                <div class="field">
-                    <label for="size-table">Таблица размеров (JSON)</label>
-                    <textarea id="size-table" rows="8" placeholder='{"headers": ["Размер", "US", "FR", "UK", "JP"], "rows": [["XXS", "0", "32", "4", "26-27"], ["XS", "0-2", "34", "6", "28-29"]]}'></textarea>
-                    <div class="hint">
-                        Формат JSON. Пример:<br>
-                        <code>{"headers": ["Размер", "US", "FR", "UK", "JP"], "rows": [["XXS", "0", "32", "4", "26-27"], ["XS", "0-2", "34", "6", "28-29"]]}</code><br>
-                        Оставь пустым, если таблица не нужна.
+                <div class="form-section">
+                    <div class="form-section-title">Таблица размеров</div>
+                    <div class="field">
+                        <label>
+                            <input type="checkbox" id="use-size-table" onchange="toggleSizeTableEditor()">
+                            Использовать таблицу размеров
+                        </label>
                     </div>
+                    <div id="size-table-editor-container" style="display: none;">
+                        <div class="size-table-editor" id="size-table-editor">
+                            <div class="size-table-controls">
+                                <button type="button" class="btn btn-small btn-primary" onclick="addSizeTableRow()">+ Добавить строку</button>
+                                <button type="button" class="btn btn-small btn-ghost" onclick="resetSizeTable()">Сбросить</button>
+                            </div>
+                            <div id="size-table-preview"></div>
+                        </div>
+                    </div>
+                    <textarea id="size-table" style="display: none;"></textarea>
                 </div>
                 <div class="flex-row">
                     <div>
@@ -257,9 +284,9 @@
                         throw new Error('Неверный формат таблицы размеров');
                     }
                 } catch (e) {
-                    formStatus.textContent = 'Ошибка в JSON таблицы размеров: ' + e.message;
-                    formStatus.style.color = '#b91c1c';
-                    return;
+            formStatus.textContent = 'Ошибка в JSON таблицы размеров: ' + e.message;
+            formStatus.className = 'status-text error';
+            return;
                 }
             }
 
@@ -278,8 +305,14 @@
             };
 
             if (!payload.title || !payload.main_image || Number.isNaN(payload.price)) {
-                formStatus.textContent = 'Заполни обязательные поля (название, цена, главное изображение).';
-                formStatus.style.color = '#b91c1c';
+                formStatus.textContent = '❌ Заполни обязательные поля (название, цена, главное изображение).';
+                formStatus.className = 'status-text error';
+                return;
+            }
+            
+            if (payload.price <= 0) {
+                formStatus.textContent = '❌ Цена должна быть больше 0.';
+                formStatus.className = 'status-text error';
                 return;
             }
 
@@ -300,9 +333,19 @@
             saveBtn.textContent = 'Сохранить товар';
 
             if (error) {
-                console.error(error);
-                formStatus.textContent = 'Ошибка сохранения. См. консоль.';
-                formStatus.style.color = '#b91c1c';
+                console.error('Save error:', error);
+                let errorMsg = `❌ Ошибка сохранения: ${error.message || 'Неизвестная ошибка'}`;
+                if (error.details) {
+                    errorMsg += `\nДетали: ${error.details}`;
+                    console.error('Error details:', error.details);
+                }
+                if (error.hint) {
+                    errorMsg += `\nПодсказка: ${error.hint}`;
+                    console.error('Error hint:', error.hint);
+                }
+                formStatus.textContent = errorMsg;
+                formStatus.className = 'status-text error';
+                alert(errorMsg + '\n\nПроверь консоль браузера (F12) для деталей.');
                 return;
             }
 
@@ -321,8 +364,26 @@
             galleryInput.value = '';
             sizesInput.value = '';
             sizeTableInput.value = '';
+            useSizeTableCheckbox.checked = false;
+            toggleSizeTableEditor();
+            resetSizeTable();
             formStatus.textContent = '';
+            formStatus.className = 'status-text';
+            
+            // Прокручиваем к форме
+            document.getElementById('product-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+        
+        // Предпросмотр изображения
+        mainImageInput.addEventListener('input', function() {
+            const preview = document.getElementById('main-image-preview');
+            if (this.value && preview) {
+                preview.src = this.value;
+                preview.style.display = 'block';
+            } else if (preview) {
+                preview.style.display = 'none';
+            }
+        });
 
         async function deleteProduct(id) {
             if (!confirm('Удалить товар #' + id + '?')) return;
@@ -350,9 +411,22 @@
             mainImageInput.value = data.main_image || '';
             galleryInput.value = (data.gallery || []).join(', ');
             sizesInput.value = (data.sizes || []).join(', ');
-            sizeTableInput.value = data.size_table ? JSON.stringify(data.size_table, null, 2) : '';
-            formStatus.textContent = 'Режим редактирования товара #' + data.id;
-            formStatus.style.color = '#111827';
+            
+            // Загружаем таблицу размеров
+            if (data.size_table) {
+                sizeTableData = data.size_table;
+                useSizeTableCheckbox.checked = true;
+                toggleSizeTableEditor();
+            } else {
+                useSizeTableCheckbox.checked = false;
+                toggleSizeTableEditor();
+            }
+            
+            formStatus.textContent = '✏️ Режим редактирования товара #' + data.id;
+            formStatus.className = 'status-text';
+            
+            // Прокручиваем к форме
+            document.getElementById('product-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         // Слушатели

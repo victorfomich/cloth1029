@@ -533,8 +533,8 @@
             const mainImg = document.getElementById('detail-main-img');
             mainImg.src = product.mainImage;
             
-            // Применяем масштаб главного изображения
-            const mainImageScale = product.imageSettings?.main_image_scale || 100;
+            // Применяем масштаб главного изображения (130% по умолчанию)
+            const mainImageScale = product.imageSettings?.main_image_scale || 130;
             mainImg.style.transform = `scale(${mainImageScale / 100})`;
             mainImg.style.transformOrigin = 'center';
             

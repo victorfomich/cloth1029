@@ -104,6 +104,15 @@
                     <input id="sizes" type="text">
                     <div class="hint">Например: <code>XS,S,M,L,XL</code></div>
                 </div>
+                <div class="field">
+                    <label for="size-table">Таблица размеров (JSON)</label>
+                    <textarea id="size-table" rows="8" placeholder='{"headers": ["Размер", "US", "FR", "UK", "JP"], "rows": [["XXS", "0", "32", "4", "26-27"], ["XS", "0-2", "34", "6", "28-29"]]}'></textarea>
+                    <div class="hint">
+                        Формат JSON. Пример:<br>
+                        <code>{"headers": ["Размер", "US", "FR", "UK", "JP"], "rows": [["XXS", "0", "32", "4", "26-27"], ["XS", "0-2", "34", "6", "28-29"]]}</code><br>
+                        Оставь пустым, если таблица не нужна.
+                    </div>
+                </div>
                 <div class="flex-row">
                     <div>
                         <button type="submit" class="btn btn-primary" id="save-btn">Сохранить товар</button>
@@ -292,6 +301,7 @@
             mainImageInput.value = '';
             galleryInput.value = '';
             sizesInput.value = '';
+            sizeTableInput.value = '';
             formStatus.textContent = '';
         }
 
@@ -321,6 +331,7 @@
             mainImageInput.value = data.main_image || '';
             galleryInput.value = (data.gallery || []).join(', ');
             sizesInput.value = (data.sizes || []).join(', ');
+            sizeTableInput.value = data.size_table ? JSON.stringify(data.size_table, null, 2) : '';
             formStatus.textContent = 'Режим редактирования товара #' + data.id;
             formStatus.style.color = '#111827';
         }

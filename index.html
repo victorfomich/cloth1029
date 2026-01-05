@@ -19,6 +19,42 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: var(--font-main); color: var(--color-text); background-color: var(--color-white); overflow-x: hidden; }
+        
+        /* PRELOADER */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+        .preloader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .preloader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Скрываем контент до загрузки */
+        body.loading .main-content {
+            display: none;
+        }
 
         /* HEADER */
         header { display: flex; justify-content: space-between; align-items: center; padding: 15px var(--spacing-edge); border-bottom: 1px solid #eee; background: #fff; position: sticky; top: 0; z-index: 100; }
@@ -68,7 +104,7 @@
         .detail-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
         .detail-gallery { display: flex; flex-direction: column; gap: 20px; }
         .main-image-container { background: var(--color-light-bg); border-radius: var(--radius); aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .main-image-container img { width: 80%; height: auto; object-fit: contain; }
+        .main-image-container img { width: 80%; height: auto; object-fit: contain; cursor: pointer; }
         .thumbnails { display: flex; gap: 10px; }
         .thumb { width: 80px; height: 80px; background: var(--color-light-bg); border-radius: 8px; padding: 10px; cursor: pointer; border: 2px solid transparent; }
         .thumb.active { border-color: #000; }
@@ -127,6 +163,80 @@
         .newsletter-input-box input { width: 100%; padding: 15px 20px; border-radius: 50px; border: 1px solid #ddd; outline: none; }
         .newsletter-input-box button { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; }
 
+        /* IMAGE MODAL */
+        .image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+        }
+        .image-modal.active {
+            display: flex;
+        }
+        .image-modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+        .image-modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        .image-modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: #fff;
+            font-size: 32px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* SIZE TABLE */
+        .size-table-container {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid #eee;
+        }
+        .size-table-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .size-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .size-table th,
+        .size-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .size-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        .size-table tr:hover {
+            background: #f9fafb;
+        }
+        
         /* RESPONSIVE */
         @media (max-width: 1024px) {
             .product-grid { grid-template-columns: repeat(2, 1fr); }
@@ -137,11 +247,20 @@
             .hero h1 { font-size: 2rem; }
             .detail-wrapper { grid-template-columns: 1fr; }
             .cart-sidebar { width: 100%; right: -100%; }
+            .size-table { font-size: 12px; }
+            .size-table th,
+            .size-table td { padding: 8px; }
         }
     </style>
 </head>
-<body>
+<body class="loading">
 
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-spinner"></div>
+    </div>
+
+    <div class="main-content">
     <header>
         <div class="nav-icon" onclick="goBack()">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -212,17 +331,20 @@
                     <button class="add-cart-btn" onclick="addToCart()">Add to Cart</button>
                 </div>
             </div>
+            
+            <!-- Таблица размеров -->
+            <div class="size-table-container" id="size-table-container"></div>
         </div>
     </div>
 
-    <section class="newsletter-section">
-        <h2>Join our email list</h2>
-        <p style="color:#666; margin-top:10px;">Get exclusive deals and early access.</p>
-        <div class="newsletter-input-box">
-            <input type="email" placeholder="Email address">
-            <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
+    <!-- Image Modal -->
+    <div class="image-modal" id="image-modal" onclick="closeImageModal()">
+        <div class="image-modal-content" onclick="event.stopPropagation()">
+            <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
+            <img id="modal-image" src="" alt="">
         </div>
-    </section>
+    </div>
+    </div>
 
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -262,10 +384,7 @@
 
         /* --- ЗАГРУЗКА ТОВАРОВ ИЗ SUPABASE --- */
         async function loadProductsFromSupabase() {
-            const productsContainer = document.getElementById('products-container');
-            productsContainer.innerHTML = '<p>Loading products...</p>';
-
-            // Таблица products: id, title, price, description, main_image, gallery, sizes
+            // Таблица products: id, title, price, description, main_image, gallery, sizes, size_table
             const { data, error } = await supabaseClient
                 .from('products')
                 .select('*')
@@ -273,6 +392,8 @@
 
             if (error) {
                 console.error('Error loading products from Supabase', error);
+                hidePreloader();
+                const productsContainer = document.getElementById('products-container');
                 productsContainer.innerHTML = '<p style="color:red;">Error loading products.</p>';
                 return;
             }
@@ -285,10 +406,65 @@
                 description: p.description,
                 sizes: Array.isArray(p.sizes) ? p.sizes : [],
                 mainImage: p.main_image,
-                gallery: Array.isArray(p.gallery) && p.gallery.length ? p.gallery : [p.main_image]
+                gallery: Array.isArray(p.gallery) && p.gallery.length ? p.gallery : [p.main_image],
+                sizeTable: p.size_table || null
             }));
 
+            // Ждём загрузки всех изображений перед показом сайта
+            await preloadImages();
             renderProductGrid();
+            hidePreloader();
+        }
+
+        // Предзагрузка изображений
+        async function preloadImages() {
+            const imagePromises = [];
+            productsData.forEach(product => {
+                // Предзагружаем главное изображение
+                imagePromises.push(loadImage(product.mainImage));
+                // Предзагружаем галерею
+                if (product.gallery) {
+                    product.gallery.forEach(img => {
+                        imagePromises.push(loadImage(img));
+                    });
+                }
+            });
+            await Promise.all(imagePromises);
+        }
+
+        // Загрузка одного изображения
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = resolve;
+                img.onerror = resolve; // Продолжаем даже если изображение не загрузилось
+                img.src = src;
+            });
+        }
+
+        // Скрытие preloader
+        function hidePreloader() {
+            const preloader = document.getElementById('preloader');
+            const body = document.body;
+            setTimeout(() => {
+                preloader.classList.add('hidden');
+                body.classList.remove('loading');
+            }, 300);
+        }
+
+        // Модальное окно для изображений
+        function openImageModal(imageSrc) {
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+            modalImage.src = imageSrc;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
 
         /* --- ЛОГИКА ОТОБРАЖЕНИЯ (КАТАЛОГ) --- */
@@ -332,11 +508,16 @@
             thumbsContainer.innerHTML = '';
             const imagesToShow = product.gallery && product.gallery.length ? product.gallery : [product.mainImage];
             
+            // Делаем главное изображение кликабельным
+            const mainImg = document.getElementById('detail-main-img');
+            mainImg.onclick = () => openImageModal(mainImg.src);
+            
             imagesToShow.forEach((imgSrc, index) => {
                 const thumb = document.createElement('div');
                 thumb.className = `thumb ${index === 0 ? 'active' : ''}`;
                 thumb.onclick = () => {
-                    document.getElementById('detail-main-img').src = imgSrc;
+                    mainImg.src = imgSrc;
+                    mainImg.onclick = () => openImageModal(imgSrc);
                     document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
                     thumb.classList.add('active');
                 };
@@ -360,10 +541,57 @@
                 });
             }
 
+            // Таблица размеров
+            renderSizeTable(product.sizeTable);
+
             // Переключение вида
             homeView.classList.remove('active');
             productView.classList.add('active');
             window.scrollTo(0, 0);
+        }
+
+        // Рендер таблицы размеров
+        function renderSizeTable(sizeTable) {
+            const container = document.getElementById('size-table-container');
+            container.innerHTML = '';
+            
+            if (!sizeTable || !sizeTable.headers || !sizeTable.rows || sizeTable.rows.length === 0) {
+                return; // Нет таблицы размеров
+            }
+
+            const table = document.createElement('table');
+            table.className = 'size-table';
+            
+            // Заголовки
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            sizeTable.headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Строки данных
+            const tbody = document.createElement('tbody');
+            sizeTable.rows.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            
+            const title = document.createElement('h3');
+            title.className = 'size-table-title';
+            title.textContent = 'Таблица размеров';
+            
+            container.appendChild(title);
+            container.appendChild(table);
         }
 
         function goBack() {

@@ -204,26 +204,26 @@ const COUNTRIES = [
 
 // Тарифы доставки по странам (USD)
 const SHIPPING_RATES = {
-    'SG': 5.00,   // Singapore
+    'SG': 10.00,   // Singapore
     'US': 15.00,  // United States
     'GB': 12.00,  // United Kingdom
-    'DE': 10.00,  // Germany
-    'FR': 10.00,  // France
-    'RU': 8.00,   // Russia
-    'KZ': 8.00,   // Kazakhstan
-    'UA': 8.00,   // Ukraine
-    'BY': 8.00,   // Belarus
-    'PL': 10.00,  // Poland
-    'CN': 7.00,   // China
-    'JP': 12.00,  // Japan
-    'KR': 10.00,  // South Korea
+    'DE': 5.50,  // Germany
+    'FR': 6.50,  // France
+    'RU': 3.50,   // Russia
+    'KZ': 3.50,   // Kazakhstan
+    'UA': 3.50,   // Ukraine
+    'BY': 3.50,   // Belarus
+    'PL': 6.00,  // Poland
+    'CN': 2.00,   // China
+    'JP': 2.00,  // Japan
+    'KR': 4.00,  // South Korea
     'AU': 20.00,  // Australia
-    'CA': 15.00,  // Canada
+    'CA': 12.00,  // Canada
     'MX': 12.00,  // Mexico
     'BR': 18.00,  // Brazil
     'IN': 6.00,   // India
-    'AE': 10.00,  // United Arab Emirates
-    'SA': 12.00,  // Saudi Arabia
+    'AE': 5.00,  // United Arab Emirates
+    'SA': 8.00,  // Saudi Arabia
     'TR': 9.00,   // Turkey
     'IT': 10.00,  // Italy
     'ES': 10.00,  // Spain

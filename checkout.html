@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - BRAZKE Store</title>
+    <style>
+        :root {
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --color-text: #111111;
+            --color-gray: #757575;
+            --color-light-bg: #f3f4f6;
+            --color-white: #ffffff;
+            --spacing-edge: 20px;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-main); color: var(--color-text); background-color: var(--color-light-bg); }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px var(--spacing-edge);
+            border-bottom: 1px solid #eee;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .brand-name {
+            font-size: 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 var(--spacing-edge);
+        }
+
+        .checkout-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .checkout-form {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 32px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .optional {
+            color: #999;
+            font-size: 12px;
+            font-weight: normal;
+        }
+
+        .order-summary {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 24px;
+            position: sticky;
+            top: 80px;
+        }
+
+        .order-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .order-item-img {
+            width: 60px;
+            height: 60px;
+            background: var(--color-light-bg);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .order-item-img img {
+            width: 90%;
+            height: auto;
+        }
+
+        .order-item-info {
+            flex: 1;
+        }
+
+        .order-item-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .order-item-variant {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 4px;
+        }
+
+        .order-item-price {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .summary-row.shipping {
+            display: none;
+        }
+
+        .summary-row.shipping.visible {
+            display: flex;
+        }
+
+        .summary-row.total {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid #000;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .shipping-country {
+            font-size: 12px;
+            color: #666;
+            margin-left: 8px;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            background: #000;
+            color: #fff;
+            padding: 16px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: opacity 0.2s;
+        }
+
+        .checkout-btn:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        .checkout-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #d00;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 968px) {
+            .checkout-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .order-summary {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand-name" onclick="window.location.href='index.html'">BRAZKE</div>
+        <div style="font-size: 14px; color: #666;">Secure checkout</div>
+    </header>
+
+    <div class="container">
+        <div class="checkout-wrapper">
+            <!-- Левая часть: Форма -->
+            <div class="checkout-form">
+                <h2 class="section-title">Contact</h2>
+                <div class="form-group">
+                    <label for="email">Email <span class="optional">(for order confirmation)</span></label>
+                    <input type="email" id="email" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Mobile or phone number</label>
+                    <input type="tel" id="phone" required placeholder="+65 1234 5678">
+                </div>
+
+                <h2 class="section-title" style="margin-top: 32px;">Delivery</h2>
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <select id="country" required>
+                        <option value="">Select country</option>
+                        <option value="SG">Singapore</option>
+                        <option value="US">United States</option>
+                        <option value="GB">United Kingdom</option>
+                        <option value="DE">Germany</option>
+                        <option value="FR">France</option>
+                        <option value="RU">Russia</option>
+                        <option value="KZ">Kazakhstan</option>
+                        <option value="UA">Ukraine</option>
+                        <option value="BY">Belarus</option>
+                        <option value="PL">Poland</option>
+                        <option value="CN">China</option>
+                        <option value="JP">Japan</option>
+                        <option value="KR">South Korea</option>
+                        <option value="AU">Australia</option>
+                        <option value="CA">Canada</option>
+                        <option value="MX">Mexico</option>
+                        <option value="BR">Brazil</option>
+                        <option value="IN">India</option>
+                        <option value="AE">United Arab Emirates</option>
+                        <option value="SA">Saudi Arabia</option>
+                        <option value="TR">Turkey</option>
+                        <option value="IT">Italy</option>
+                        <option value="ES">Spain</option>
+                        <option value="NL">Netherlands</option>
+                        <option value="BE">Belgium</option>
+                        <option value="CH">Switzerland</option>
+                        <option value="AT">Austria</option>
+                        <option value="SE">Sweden</option>
+                        <option value="NO">Norway</option>
+                        <option value="DK">Denmark</option>
+                        <option value="FI">Finland</option>
+                        <option value="IE">Ireland</option>
+                        <option value="PT">Portugal</option>
+                        <option value="GR">Greece</option>
+                        <option value="CZ">Czech Republic</option>
+                        <option value="HU">Hungary</option>
+                        <option value="RO">Romania</option>
+                        <option value="BG">Bulgaria</option>
+                        <option value="HR">Croatia</option>
+                        <option value="SK">Slovakia</option>
+                        <option value="SI">Slovenia</option>
+                        <option value="EE">Estonia</option>
+                        <option value="LV">Latvia</option>
+                        <option value="LT">Lithuania</option>
+                        <option value="LU">Luxembourg</option>
+                        <option value="MT">Malta</option>
+                        <option value="CY">Cyprus</option>
+                        <option value="IS">Iceland</option>
+                        <option value="LI">Liechtenstein</option>
+                        <option value="MC">Monaco</option>
+                        <option value="SM">San Marino</option>
+                        <option value="VA">Vatican City</option>
+                        <option value="AD">Andorra</option>
+                        <option value="AL">Albania</option>
+                        <option value="BA">Bosnia and Herzegovina</option>
+                        <option value="MK">North Macedonia</option>
+                        <option value="ME">Montenegro</option>
+                        <option value="RS">Serbia</option>
+                        <option value="XK">Kosovo</option>
+                        <option value="MD">Moldova</option>
+                        <option value="AM">Armenia</option>
+                        <option value="AZ">Azerbaijan</option>
+                        <option value="GE">Georgia</option>
+                        <option value="IL">Israel</option>
+                        <option value="JO">Jordan</option>
+                        <option value="LB">Lebanon</option>
+                        <option value="IQ">Iraq</option>
+                        <option value="IR">Iran</option>
+                        <option value="KW">Kuwait</option>
+                        <option value="OM">Oman</option>
+                        <option value="QA">Qatar</option>
+                        <option value="BH">Bahrain</option>
+                        <option value="YE">Yemen</option>
+                        <option value="EG">Egypt</option>
+                        <option value="MA">Morocco</option>
+                        <option value="DZ">Algeria</option>
+                        <option value="TN">Tunisia</option>
+                        <option value="LY">Libya</option>
+                        <option value="SD">Sudan</option>
+                        <option value="ET">Ethiopia</option>
+                        <option value="KE">Kenya</option>
+                        <option value="ZA">South Africa</option>
+                        <option value="NG">Nigeria</option>
+                        <option value="GH">Ghana</option>
+                        <option value="TZ">Tanzania</option>
+                        <option value="UG">Uganda</option>
+                        <option value="RW">Rwanda</option>
+                        <option value="MW">Malawi</option>
+                        <option value="ZM">Zambia</option>
+                        <option value="ZW">Zimbabwe</option>
+                        <option value="BW">Botswana</option>
+                        <option value="NA">Namibia</option>
+                        <option value="MZ">Mozambique</option>
+                        <option value="AO">Angola</option>
+                        <option value="CM">Cameroon</option>
+                        <option value="SN">Senegal</option>
+                        <option value="CI">Ivory Coast</option>
+                        <option value="ML">Mali</option>
+                        <option value="BF">Burkina Faso</option>
+                        <option value="NE">Niger</option>
+                        <option value="TD">Chad</option>
+                        <option value="MR">Mauritania</option>
+                        <option value="GM">Gambia</option>
+                        <option value="GW">Guinea-Bissau</option>
+                        <option value="GN">Guinea</option>
+                        <option value="SL">Sierra Leone</option>
+                        <option value="LR">Liberia</option>
+                        <option value="TG">Togo</option>
+                        <option value="BJ">Benin</option>
+                        <option value="GA">Gabon</option>
+                        <option value="CG">Republic of the Congo</option>
+                        <option value="CD">Democratic Republic of the Congo</option>
+                        <option value="CF">Central African Republic</option>
+                        <option value="GQ">Equatorial Guinea</option>
+                        <option value="ST">São Tomé and Príncipe</option>
+                        <option value="DJ">Djibouti</option>
+                        <option value="ER">Eritrea</option>
+                        <option value="SO">Somalia</option>
+                        <option value="SS">South Sudan</option>
+                        <option value="BI">Burundi</option>
+                        <option value="KM">Comoros</option>
+                        <option value="MU">Mauritius</option>
+                        <option value="SC">Seychelles</option>
+                        <option value="CV">Cape Verde</option>
+                        <option value="GW">Guinea-Bissau</option>
+                        <option value="LS">Lesotho</option>
+                        <option value="SZ">Eswatini</option>
+                        <option value="GM">Gambia</option>
+                        <option value="GM">Gambia</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First name</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last name</label>
+                        <input type="text" id="lastName" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <input type="text" id="address" required placeholder="Street address">
+                </div>
+
+                <div class="form-group">
+                    <label for="apartment">Apartment, suite, etc. <span class="optional">(optional)</span></label>
+                    <input type="text" id="apartment" placeholder="Apartment, suite, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label for="postalCode">Postal code</label>
+                    <input type="text" id="postalCode" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" required>
+                </div>
+            </div>
+
+            <!-- Правая часть: Сводка заказа -->
+            <div class="order-summary">
+                <h2 class="section-title" style="margin-top: 0;">Order summary</h2>
+                <div id="order-items"></div>
+                
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+                <div class="summary-row shipping" id="shipping-row">
+                    <span>Shipping <span class="shipping-country" id="shipping-country"></span></span>
+                    <span id="shipping-cost">$0.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span id="total">$0.00</span>
+                </div>
+
+                <button class="checkout-btn" id="checkout-btn" onclick="processCheckout()">
+                    Complete order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://xrlitnxswsiuwntmkmaj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhybGl0bnhzd3NpdXdudG1rbWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MDYxMDksImV4cCI6MjA4MzE4MjEwOX0.-I_44JSVp7hqY8LiVlwgqXi0WNo-gwmtnL5WXv5dYvw';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let cart = [];
+        const shippingRates = {
+            'SG': 5.00,  // Singapore
+            'US': 15.00,
+            'GB': 12.00,
+            'DE': 10.00,
+            'FR': 10.00,
+            'RU': 8.00,
+            'KZ': 8.00,
+            'UA': 8.00,
+            'BY': 8.00,
+            'PL': 10.00,
+            'CN': 7.00,
+            'JP': 12.00,
+            'KR': 10.00,
+            'AU': 20.00,
+            'CA': 15.00,
+            'MX': 12.00,
+            'BR': 18.00,
+            'IN': 6.00,
+            'AE': 10.00,
+            'SA': 12.00,
+            'TR': 9.00,
+            'IT': 10.00,
+            'ES': 10.00,
+            'NL': 10.00,
+            'BE': 10.00,
+            'CH': 12.00,
+            'AT': 10.00,
+            'SE': 12.00,
+            'NO': 15.00,
+            'DK': 12.00,
+            'FI': 12.00,
+            'IE': 10.00,
+            'PT': 10.00,
+            'GR': 10.00,
+            'CZ': 9.00,
+            'HU': 9.00,
+            'RO': 8.00,
+            'BG': 8.00,
+            'HR': 9.00,
+            'SK': 9.00,
+            'SI': 9.00,
+            'EE': 10.00,
+            'LV': 10.00,
+            'LT': 10.00,
+            'LU': 10.00,
+            'MT': 10.00,
+            'CY': 10.00,
+            'IS': 15.00,
+            'LI': 12.00,
+            'MC': 12.00,
+            'SM': 12.00,
+            'VA': 12.00,
+            'AD': 12.00,
+            'AL': 8.00,
+            'BA': 8.00,
+            'MK': 8.00,
+            'ME': 8.00,
+            'RS': 8.00,
+            'XK': 8.00,
+            'MD': 8.00,
+            'AM': 8.00,
+            'AZ': 8.00,
+            'GE': 8.00,
+            'IL': 10.00,
+            'JO': 10.00,
+            'LB': 10.00,
+            'IQ': 10.00,
+            'IR': 10.00,
+            'KW': 10.00,
+            'OM': 10.00,
+            'QA': 10.00,
+            'BH': 10.00,
+            'YE': 12.00,
+            'EG': 10.00,
+            'MA': 10.00,
+            'DZ': 10.00,
+            'TN': 10.00,
+            'LY': 12.00,
+            'SD': 12.00,
+            'ET': 15.00,
+            'KE': 15.00,
+            'ZA': 18.00,
+            'NG': 15.00,
+            'GH': 15.00,
+            'TZ': 15.00,
+            'UG': 15.00,
+            'RW': 15.00,
+            'MW': 15.00,
+            'ZM': 18.00,
+            'ZW': 18.00,
+            'BW': 18.00,
+            'NA': 18.00,
+            'MZ': 18.00,
+            'AO': 18.00,
+            'CM': 15.00,
+            'SN': 15.00,
+            'CI': 15.00,
+            'ML': 15.00,
+            'BF': 15.00,
+            'NE': 15.00,
+            'TD': 18.00,
+            'MR': 15.00,
+            'GM': 15.00,
+            'GW': 15.00,
+            'GN': 15.00,
+            'SL': 15.00,
+            'LR': 15.00,
+            'TG': 15.00,
+            'BJ': 15.00,
+            'GA': 15.00,
+            'CG': 15.00,
+            'CD': 18.00,
+            'CF': 18.00,
+            'GQ': 15.00,
+            'ST': 18.00,
+            'DJ': 15.00,
+            'ER': 15.00,
+            'SO': 18.00,
+            'SS': 18.00,
+            'BI': 15.00,
+            'KM': 18.00,
+            'MU': 18.00,
+            'SC': 18.00,
+            'CV': 15.00,
+            'LS': 18.00,
+            'SZ': 18.00,
+            'default': 15.00
+        };
+
+        const countryNames = {
+            'SG': 'Singapore',
+            'US': 'United States',
+            'GB': 'United Kingdom',
+            'DE': 'Germany',
+            'FR': 'France',
+            'RU': 'Russia',
+            'KZ': 'Kazakhstan',
+            'UA': 'Ukraine',
+            'BY': 'Belarus',
+            'PL': 'Poland',
+            'CN': 'China',
+            'JP': 'Japan',
+            'KR': 'South Korea',
+            'AU': 'Australia',
+            'CA': 'Canada',
+            'MX': 'Mexico',
+            'BR': 'Brazil',
+            'IN': 'India',
+            'AE': 'United Arab Emirates',
+            'SA': 'Saudi Arabia',
+            'TR': 'Turkey',
+            'IT': 'Italy',
+            'ES': 'Spain',
+            'NL': 'Netherlands',
+            'BE': 'Belgium',
+            'CH': 'Switzerland',
+            'AT': 'Austria',
+            'SE': 'Sweden',
+            'NO': 'Norway',
+            'DK': 'Denmark',
+            'FI': 'Finland',
+            'IE': 'Ireland',
+            'PT': 'Portugal',
+            'GR': 'Greece',
+            'CZ': 'Czech Republic',
+            'HU': 'Hungary',
+            'RO': 'Romania',
+            'BG': 'Bulgaria',
+            'HR': 'Croatia',
+            'SK': 'Slovakia',
+            'SI': 'Slovenia',
+            'EE': 'Estonia',
+            'LV': 'Latvia',
+            'LT': 'Lithuania',
+            'LU': 'Luxembourg',
+            'MT': 'Malta',
+            'CY': 'Cyprus',
+            'IS': 'Iceland',
+            'LI': 'Liechtenstein',
+            'MC': 'Monaco',
+            'SM': 'San Marino',
+            'VA': 'Vatican City',
+            'AD': 'Andorra',
+            'AL': 'Albania',
+            'BA': 'Bosnia and Herzegovina',
+            'MK': 'North Macedonia',
+            'ME': 'Montenegro',
+            'RS': 'Serbia',
+            'XK': 'Kosovo',
+            'MD': 'Moldova',
+            'AM': 'Armenia',
+            'AZ': 'Azerbaijan',
+            'GE': 'Georgia',
+            'IL': 'Israel',
+            'JO': 'Jordan',
+            'LB': 'Lebanon',
+            'IQ': 'Iraq',
+            'IR': 'Iran',
+            'KW': 'Kuwait',
+            'OM': 'Oman',
+            'QA': 'Qatar',
+            'BH': 'Bahrain',
+            'YE': 'Yemen',
+            'EG': 'Egypt',
+            'MA': 'Morocco',
+            'DZ': 'Algeria',
+            'TN': 'Tunisia',
+            'LY': 'Libya',
+            'SD': 'Sudan',
+            'ET': 'Ethiopia',
+            'KE': 'Kenya',
+            'ZA': 'South Africa',
+            'NG': 'Nigeria',
+            'GH': 'Ghana',
+            'TZ': 'Tanzania',
+            'UG': 'Uganda',
+            'RW': 'Rwanda',
+            'MW': 'Malawi',
+            'ZM': 'Zambia',
+            'ZW': 'Zimbabwe',
+            'BW': 'Botswana',
+            'NA': 'Namibia',
+            'MZ': 'Mozambique',
+            'AO': 'Angola',
+            'CM': 'Cameroon',
+            'SN': 'Senegal',
+            'CI': 'Ivory Coast',
+            'ML': 'Mali',
+            'BF': 'Burkina Faso',
+            'NE': 'Niger',
+            'TD': 'Chad',
+            'MR': 'Mauritania',
+            'GM': 'Gambia',
+            'GW': 'Guinea-Bissau',
+            'GN': 'Guinea',
+            'SL': 'Sierra Leone',
+            'LR': 'Liberia',
+            'TG': 'Togo',
+            'BJ': 'Benin',
+            'GA': 'Gabon',
+            'CG': 'Republic of the Congo',
+            'CD': 'Democratic Republic of the Congo',
+            'CF': 'Central African Republic',
+            'GQ': 'Equatorial Guinea',
+            'ST': 'São Tomé and Príncipe',
+            'DJ': 'Djibouti',
+            'ER': 'Eritrea',
+            'SO': 'Somalia',
+            'SS': 'South Sudan',
+            'BI': 'Burundi',
+            'KM': 'Comoros',
+            'MU': 'Mauritius',
+            'SC': 'Seychelles',
+            'CV': 'Cape Verde',
+            'LS': 'Lesotho',
+            'SZ': 'Eswatini'
+        };
+
+        // Загружаем корзину из localStorage
+        function loadCart() {
+            const savedCart = localStorage.getItem('cart');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+                renderOrderSummary();
+            } else {
+                // Если корзины нет, редирект на главную
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Рендерим сводку заказа
+        function renderOrderSummary() {
+            const container = document.getElementById('order-items');
+            container.innerHTML = '';
+
+            cart.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'order-item';
+                div.innerHTML = `
+                    <div class="order-item-img">
+                        <img src="${item.image}" alt="${item.title}">
+                    </div>
+                    <div class="order-item-info">
+                        <div class="order-item-title">${item.title}</div>
+                        <div class="order-item-variant">Size: ${item.size}</div>
+                        <div class="order-item-price">$${item.price.toFixed(2)}</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            updateTotals();
+        }
+
+        // Обновляем итоги
+        function updateTotals() {
+            const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+
+            const country = document.getElementById('country').value;
+            let shipping = 0;
+            const shippingRow = document.getElementById('shipping-row');
+            const shippingCostEl = document.getElementById('shipping-cost');
+            const shippingCountryEl = document.getElementById('shipping-country');
+
+            if (country) {
+                shipping = shippingRates[country] || shippingRates['default'];
+                shippingRow.classList.add('visible');
+                shippingCostEl.textContent = `$${shipping.toFixed(2)}`;
+                const countryName = countryNames[country] || country;
+                shippingCountryEl.textContent = `(${countryName})`;
+            } else {
+                shippingRow.classList.remove('visible');
+            }
+
+            const total = subtotal + shipping;
+            document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Обработчик изменения страны
+        document.getElementById('country').addEventListener('change', updateTotals);
+
+        // Обработка checkout
+        async function processCheckout() {
+            // Валидация формы
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const country = document.getElementById('country').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const address = document.getElementById('address').value;
+            const postalCode = document.getElementById('postalCode').value;
+            const city = document.getElementById('city').value;
+
+            if (!email || !phone || !country || !firstName || !lastName || !address || !postalCode || !city) {
+                alert('Пожалуйста, заполните все обязательные поля');
+                return;
+            }
+
+            const checkoutBtn = document.getElementById('checkout-btn');
+            checkoutBtn.disabled = true;
+            checkoutBtn.textContent = 'Processing...';
+
+            try {
+                const items = cart.map(item => ({
+                    title: item.title,
+                    price: item.price,
+                    size: item.size,
+                    image: item.image,
+                    quantity: 1
+                }));
+
+                const currentOrigin = window.location.origin;
+                const successUrl = `${currentOrigin}/success.html`;
+                const cancelUrl = `${currentOrigin}/checkout.html`;
+
+                const shipping = shippingRates[country] || shippingRates['default'];
+                const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+                const total = subtotal + shipping;
+
+                // Добавляем shipping как отдельный item в Stripe
+                items.push({
+                    title: `Shipping to ${countryNames[country] || country}`,
+                    price: shipping,
+                    size: null,
+                    image: null,
+                    quantity: 1
+                });
+
+                const { data, error } = await supabaseClient.functions.invoke('create-checkout', {
+                    body: {
+                        items: items,
+                        customerEmail: email,
+                        customerName: `${firstName} ${lastName}`,
+                        successUrl: successUrl,
+                        cancelUrl: cancelUrl,
+                        shippingAddress: {
+                            country: country,
+                            firstName: firstName,
+                            lastName: lastName,
+                            address: address,
+                            apartment: document.getElementById('apartment').value,
+                            postalCode: postalCode,
+                            city: city,
+                            phone: phone
+                        }
+                    }
+                });
+
+                if (error) {
+                    throw new Error(error.message || 'Ошибка создания сессии оплаты');
+                }
+
+                if (!data || !data.url) {
+                    throw new Error('Не получен URL для оплаты');
+                }
+
+                // Сохраняем адрес доставки в localStorage для успешной страницы
+                localStorage.setItem('shippingAddress', JSON.stringify({
+                    country: country,
+                    firstName: firstName,
+                    lastName: lastName,
+                    address: address,
+                    apartment: document.getElementById('apartment').value,
+                    postalCode: postalCode,
+                    city: city,
+                    phone: phone
+                }));
+
+                // Перенаправляем на Stripe Checkout
+                window.location.href = data.url;
+
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('Ошибка при создании сессии оплаты: ' + error.message);
+                checkoutBtn.disabled = false;
+                checkoutBtn.textContent = 'Complete order';
+            }
+        }
+
+        // Автоопределение страны по IP (опционально, можно добавить позже)
+        // Пока просто загружаем корзину
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCart();
+        });
+    </script>
+</body>
+</html>
+

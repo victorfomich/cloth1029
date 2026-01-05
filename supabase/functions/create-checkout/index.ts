@@ -16,7 +16,7 @@ serve(async (req) => {
 
   try {
     // Получаем данные из запроса
-    const { items, customerEmail, customerName, successUrl, cancelUrl } =
+    const { items, customerEmail, customerName, successUrl, cancelUrl, shippingAddress } =
       await req.json();
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -55,6 +55,7 @@ serve(async (req) => {
         total_amount: totalAmount,
         status: "pending",
         items: items,
+        shipping_address: shippingAddress || null,
       })
       .select()
       .single();

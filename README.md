@@ -6,7 +6,10 @@
 
 - `index.html` - Главная страница магазина (витрина)
 - `admin.html` - Админ-панель для управления товарами
+- `success.html` - Страница успешной оплаты
 - `supabase-setup.sql` - SQL скрипт для настройки базы данных Supabase
+- `stripe-setup.sql` - SQL скрипт для создания таблицы заказов
+- `supabase/functions/` - Edge Functions для Stripe интеграции
 - `img-*.jpg` - Изображения товаров
 
 ## Быстрый старт
@@ -54,9 +57,21 @@ npx serve
 3. Добавь товар через форму или отредактируй существующий
 4. Изменения сразу появятся на витрине после обновления страницы
 
+## Настройка Stripe (оплата)
+
+Для включения реальной оплаты через Stripe:
+
+1. **Прочитай подробную инструкцию** в файле `STRIPE_SETUP.md`
+2. Выполни SQL из `stripe-setup.sql` в Supabase
+3. Задеплой Edge Functions (см. `STRIPE_SETUP.md`)
+4. Настрой Stripe API ключи и webhook
+
+После настройки покупатели смогут оплачивать товары через Stripe Checkout.
+
 ## Технологии
 
 - HTML/CSS/JavaScript (vanilla)
-- Supabase (PostgreSQL база данных)
+- Supabase (PostgreSQL база данных + Edge Functions)
+- Stripe (платежи)
 - Vercel (хостинг)
 

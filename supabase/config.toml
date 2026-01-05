@@ -1,0 +1,12 @@
+# Supabase Edge Functions Configuration
+# Этот файл нужен для деплоя Edge Functions через Supabase CLI
+
+[project]
+id = "xrlitnxswsiuwntmkmaj"
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+

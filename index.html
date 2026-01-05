@@ -458,15 +458,73 @@
             document.getElementById('cart-total-price').innerText = '$' + total.toFixed(2);
         }
 
-        function checkout() {
+        async function checkout() {
             if (cart.length === 0) {
                 alert("Your cart is empty!");
                 return;
             }
-            alert(`Thank you for your purchase! Total: $${cart.reduce((s,i)=>s+i.price,0).toFixed(2)}`);
-            cart = [];
-            updateCartUI();
-            toggleCart();
+
+            // Запрашиваем email покупателя
+            const customerEmail = prompt("Введите ваш email для получения чека:");
+            if (!customerEmail || !customerEmail.includes('@')) {
+                alert("Пожалуйста, введите корректный email адрес.");
+                return;
+            }
+
+            const customerName = prompt("Введите ваше имя (необязательно):") || "";
+
+            // Показываем загрузку
+            const checkoutBtn = document.querySelector('.checkout-btn');
+            if (checkoutBtn) {
+                checkoutBtn.disabled = true;
+                checkoutBtn.textContent = 'Обработка...';
+            }
+
+            try {
+                // Подготавливаем данные для отправки
+                const items = cart.map(item => ({
+                    title: item.title,
+                    price: item.price,
+                    size: item.size,
+                    image: item.image,
+                    quantity: 1
+                }));
+
+                // Получаем URL текущей страницы для success/cancel URLs
+                const currentOrigin = window.location.origin;
+                const successUrl = `${currentOrigin}/success.html`;
+                const cancelUrl = `${currentOrigin}/index.html`;
+
+                // Вызываем Edge Function для создания Stripe Checkout Session
+                const { data, error } = await supabaseClient.functions.invoke('create-checkout', {
+                    body: {
+                        items: items,
+                        customerEmail: customerEmail,
+                        customerName: customerName,
+                        successUrl: successUrl,
+                        cancelUrl: cancelUrl
+                    }
+                });
+
+                if (error) {
+                    throw new Error(error.message || 'Ошибка создания сессии оплаты');
+                }
+
+                if (!data || !data.url) {
+                    throw new Error('Не получен URL для оплаты');
+                }
+
+                // Перенаправляем на Stripe Checkout
+                window.location.href = data.url;
+
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('Ошибка при создании сессии оплаты: ' + error.message);
+                if (checkoutBtn) {
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.textContent = 'Checkout';
+                }
+            }
         }
 
         // Запуск - ждём загрузки SDK и DOM
